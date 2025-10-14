@@ -17,7 +17,7 @@ const AppNavigator = () => {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#f4511e',
+          backgroundColor: '#009dffff',
         },
         headerTintColor: '#fff',
         headerTitleStyle: {

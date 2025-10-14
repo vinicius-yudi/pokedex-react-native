@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect, useContext } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator, Button, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import { getPokemonDetails } from '../api/pokeapi';
 import { PokemonDetails } from '../types/pokemon';
 import { FavoritesContext } from '../contexts/FavoritesContext';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import axios from 'axios';
+import typeColors from '../utils/typeColors';
 
 type DetailsScreenRouteProp = RouteProp<RootStackParamList, 'Details'>;
 
@@ -15,6 +18,7 @@ const DetailsScreen = () => {
   const [pokemon, setPokemon] = useState<PokemonDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [abilitiesPT, setAbilitiesPT] = useState<string[]>([]);
 
   const { addFavorite, removeFavorite, isFavorite } = useContext(FavoritesContext);
 
@@ -25,6 +29,19 @@ const DetailsScreen = () => {
         setError(null);
         const details = await getPokemonDetails(pokemonName);
         setPokemon(details);
+        // Buscar habilidades em português
+        const abilities = await Promise.all(
+          details.abilities.map(async ({ ability }) => {
+            try {
+              const res = await axios.get(ability.url);
+              const ptEntry = res.data.names.find((n: any) => n.language.name === 'pt');
+              return ptEntry ? ptEntry.name : ability.name;
+            } catch {
+              return ability.name;
+            }
+          })
+        );
+        setAbilitiesPT(abilities);
       } catch (err) {
         setError(`Pokémon "${pokemonName}" não encontrado.`);
       } finally {
@@ -63,26 +80,30 @@ const DetailsScreen = () => {
 
   const favorite = isFavorite(pokemon.id);
 
+  const mainType = pokemon.types[0]?.type.name;
+  const bgColor = typeColors[mainType] || '#fff';
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: bgColor }]}> 
       <Image 
         source={{ uri: pokemon.sprites.other['official-artwork'].front_default }} 
         style={styles.image} 
       />
       <Text style={styles.name}>{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}</Text>
       <Text style={styles.pokedexNumber}>#{String(pokemon.id).padStart(3, '0')}</Text>
-      
       <View style={styles.typesContainer}>
         {pokemon.types.map(({ type }) => (
           <Text key={type.name} style={styles.type}>{type.name}</Text>
         ))}
       </View>
-
       <Text style={styles.sectionTitle}>Habilidades</Text>
-      {pokemon.abilities.map(({ ability }) => (
-        <Text key={ability.name} style={styles.ability}>- {ability.name}</Text>
-      ))}
-
+      <View style={styles.abilitiesContainer}>
+        {abilitiesPT.map((name, idx) => (
+          <View key={name + idx} style={styles.abilityBox}>
+            <Text style={styles.abilityText}>{name}</Text>
+          </View>
+        ))}
+      </View>
       <TouchableOpacity onPress={handleFavoritePress} style={[styles.favoriteButton, {backgroundColor: favorite ? '#FFD700' : '#d3d3d3'}]}>
         <Text style={styles.favoriteButtonText}>{favorite ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos'}</Text>
       </TouchableOpacity>
@@ -107,7 +128,26 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   sectionTitle: { fontSize: 22, fontWeight: 'bold', marginTop: 10, marginBottom: 5 },
-  ability: { fontSize: 18, textTransform: 'capitalize' },
+  abilitiesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  abilityBox: {
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 15,
+    paddingVertical: 5,
+    borderRadius: 15,
+    margin: 5,
+    alignItems: 'center',
+  },
+  abilityText: {
+    fontSize: 16,
+    textTransform: 'capitalize',
+    color: '#333',
+    fontWeight: 'bold',
+  },
   errorText: { color: 'red', fontSize: 18 },
   favoriteButton: {
     marginTop: 30,
