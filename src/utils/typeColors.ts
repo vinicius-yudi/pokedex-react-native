@@ -1,5 +1,3 @@
-// src/utils/typeColors.ts
-
 const typeColors: { [key: string]: string } = {
   normal: '#A8A77A',
   fire: '#EE8130',

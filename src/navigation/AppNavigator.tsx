@@ -23,6 +23,7 @@ const AppNavigator = () => {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerTitleAlign: 'center',
       }}
     >
       <Stack.Screen 
