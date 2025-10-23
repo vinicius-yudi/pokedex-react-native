@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface PokemonCardProps {
@@ -8,13 +8,29 @@ interface PokemonCardProps {
 }
 
 const PokemonCard: React.FC<PokemonCardProps> = ({ name, url, onPress }) => {
-  // Extrai o ID do Pokémon da URL para montar a URL da imagem
   const pokemonId = url.split('/')[url.split('/').length - 2];
-  const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
+  
+  const officialImageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
+  
+  // URL de Fallback: Sprite padrão
+  const defaultImageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+
+  const [imageUrl, setImageUrl] = useState(officialImageUrl);
+
+  const handleImageError = () => {
+    // Se a URL atual for a principal, mude para a de fallback.
+    if (imageUrl === officialImageUrl) {
+      setImageUrl(defaultImageUrl);
+    }
+  };
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <Image source={{ uri: imageUrl }} style={styles.image} />
+      <Image 
+        source={{ uri: imageUrl }} 
+        style={styles.image} 
+        onError={handleImageError} // Adicionamos o manipulador de erro aqui
+      />
       <Text style={styles.name}>{name.charAt(0).toUpperCase() + name.slice(1)}</Text>
     </TouchableOpacity>
   );
